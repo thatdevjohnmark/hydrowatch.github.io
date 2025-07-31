@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Water Usage Monitor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Water Usage and Bill</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Month</th>
+        <th>Usage</th>
+        <th>Bill</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+
+  <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.0/tabletop.min.js"></script>
+  <script>
+window.onload = function() {
+  const sheetID = '1qEoiFgt9tYM8U7ehK1nY0hOU_L5xjXYTOkY7Gg3tzMU';
+
+  Tabletop.init({
+    key: sheetID,
+    simpleSheet: true,
+    callback: function(data) {
+      console.log("Fetched data:", data); // Debug log
+
+      const grouped = {};
+
+      // Group data by Name
+      data.forEach(row => {
+        const name = row.Name;
+        const month = row.Month;
+        const usage = parseInt(row.Usage);
+
+        if (!grouped[name]) grouped[name] = [];
+        grouped[name].push({ month, usage });
+      });
+
+      const tbody = document.getElementById("table-body");
+
+      Object.keys(grouped).forEach(name => {
+        const records = grouped[name];
+        records.sort((a, b) => a.month.localeCompare(b.month));
+
+        for (let i = 0; i < records.length; i++) {
+          const curr = records[i];
+          const prev = records[i - 1];
+          const bill = (prev) ? curr.usage - prev.usage : "N/A";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${name}</td>
+            <td>${curr.month}</td>
+            <td>${curr.usage}</td>
+            <td>${bill}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      });
+    }
+  });
+};
+  </script>
+</body>
+</html>
