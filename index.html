@@ -1,90 +1,396 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Water Usage Monitor</title>
+  <meta charset="UTF-8" />
+  <title>Hydro Watch</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
+    body { font-family: 'Inter', sans-serif; } /* More modern font if desired, or keep sans-serif */
+
+    /* Custom scrollbar for better UX */
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 8px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
+    .overflow-x-auto::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
     }
-    th, td {
-      padding: 8px 12px;
-      border: 1px solid #ccc;
-      text-align: center;
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: #a7d9f7; /* Lighter blue */
+      border-radius: 10px;
     }
-    th {
-      background: #f0f0f0;
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: #60a5fa; /* Blue-500 */
+    }
+
+    /* Animation for the header gradient */
+    @keyframes pulse-gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .animate-pulse-gradient {
+      background-size: 200% 200%;
+      animation: pulse-gradient 5s ease infinite;
+    }
+
+    /* Custom styles for better focus indication if default is not enough */
+    input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.45); /* Tailwind blue-400 with opacity */
     }
   </style>
+  <script src="https://unpkg.com/feather-icons"></script>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen antialiased text-gray-800">
+  <div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-xl shadow-lg mb-8 animate-pulse-gradient">
+      <h1 class="text-4xl font-extrabold mb-2 text-center flex items-center justify-center gap-3">
+        <svg class="w-10 h-10 text-blue-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M3 21v-2a4 4 0 014-4h10a4 4 0 014 4v2M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Hydro Watch
+      </h1>
+      <p class="text-center text-blue-200 text-lg">Track and manage your water consumption efficiently.</p>
+    </header>
 
-  <h1>Water Usage and Bill</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Month</th>
-        <th>Usage</th>
-        <th>Bill</th>
-      </tr>
-    </thead>
-    <tbody id="table-body"></tbody>
-  </table>
+    <div class="bg-white p-6 rounded-xl shadow-md mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="relative">
+          <label for="searchInput" class="sr-only">Search</label>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" data-feather="search"></span>
+          <input id="searchInput" type="text" placeholder="Search by name, month, or usage..."
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out" />
+        </div>
+        <div class="relative">
+          <label for="nameFilter" class="sr-only">Filter by Name</label>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" data-feather="user"></span>
+          <select id="nameFilter"
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-700 w-full appearance-none bg-white focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out">
+            <option value="">All Names</option>
+          </select>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" data-feather="chevron-down"></span>
+        </div>
+        <div class="relative">
+          <label for="monthFilter" class="sr-only">Filter by Month</label>
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" data-feather="calendar"></span>
+          <select id="monthFilter"
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-700 w-full appearance-none bg-white focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ease-in-out">
+            <option value="">All Months</option>
+          </select>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" data-feather="chevron-down"></span>
+        </div>
+      </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/tabletop@1.6.0/tabletop.min.js"></script>
+    <div id="loading-spinner" class="text-center py-12 hidden">
+        <svg class="animate-spin h-12 w-12 text-blue-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-lg text-gray-600">Loading water usage data...</p>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg shadow-lg bg-white">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-blue-50 sticky top-0 z-10 shadow-sm">
+          <tr>
+            <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Name</th>
+            <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Month</th>
+            <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Usage (Cubic Meters)</th>
+            <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Bill (PHP)</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-gray-100">
+          </tbody>
+      </table>
+      <p id="empty-state-message" class="hidden text-center text-gray-500 py-10 text-lg">
+        <span data-feather="info" class="inline-block align-middle mr-2 text-blue-400"></span>
+        No water usage records found for the selected filters. Try adjusting your search!
+      </p>
+    </div>
+  </div>
+
   <script>
-window.onload = function() {
-  const sheetID = '1qEoiFgt9tYM8U7ehK1nY0hOU_L5xjXYTOkY7Gg3tzMU';
+  // Corrected CSV URL for demo purposes. Ensure your actual published URL is used.
+  // The provided URL might be outdated or not published correctly for public access.
+  const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQRHMGoTcKUK_tYUBivmT1ikkldhQlB8GzFdfxinAlCxDqoTrT7BMr6moflqgdTF4N90yGlfFW72Sin/pub?output=csv';
 
-  Tabletop.init({
-    key: sheetID,
-    simpleSheet: true,
-    callback: function(data) {
-      console.log("Fetched data:", data); // Debug log
+  const monthNames = [
+    "", "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-      const grouped = {};
+  let allData = [];
+  let uniqueNames = new Set(); // To store all unique names initially
 
-      // Group data by Name
-      data.forEach(row => {
-        const name = row.Name;
-        const month = row.Month;
-        const usage = parseInt(row.Usage);
+  const loadingSpinner = document.getElementById('loading-spinner');
+  const tableBody = document.getElementById('table-body');
+  const emptyStateMessage = document.getElementById('empty-state-message');
 
-        if (!grouped[name]) grouped[name] = [];
-        grouped[name].push({ month, usage });
-      });
+  function showLoading() {
+    loadingSpinner.classList.remove('hidden');
+    tableBody.innerHTML = ''; // Clear table
+    emptyStateMessage.classList.add('hidden');
+  }
 
-      const tbody = document.getElementById("table-body");
+  function hideLoading() {
+    loadingSpinner.classList.add('hidden');
+  }
 
-      Object.keys(grouped).forEach(name => {
-        const records = grouped[name];
-        records.sort((a, b) => a.month.localeCompare(b.month));
+  function showEmptyState(message) {
+    emptyStateMessage.textContent = message;
+    emptyStateMessage.classList.remove('hidden');
+    feather.replace(); // Re-render feather icons for the new message
+  }
 
-        for (let i = 0; i < records.length; i++) {
-          const curr = records[i];
-          const prev = records[i - 1];
-          const bill = (prev) ? curr.usage - prev.usage : "N/A";
+  function hideEmptyState() {
+    emptyStateMessage.classList.add('hidden');
+  }
 
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${name}</td>
-            <td>${curr.month}</td>
-            <td>${curr.usage}</td>
-            <td>${bill}</td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
+  function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines.shift().split(',').map(h => h.trim());
+    if (!headers.includes('Name') || !headers.includes('Month') || !headers.includes('Usage')) {
+      console.error('CSV headers missing required columns: Name, Month, Usage');
+      return [];
     }
-  });
-};
+    const skippedRows = [];
+    const validRows = lines
+      .map((line, index) => {
+        const values = line.split(',').map(v => v.trim());
+        if (values.length < headers.length) {
+          skippedRows.push(`Row ${index + 2}: Fewer columns than expected: ${line}`);
+          return null;
+        }
+        const obj = {};
+        headers.forEach((header, i) => obj[header] = values[i] ?? "");
+        if (!obj.Name) {
+          skippedRows.push(`Row ${index + 2}: Missing Name: ${line}`);
+          return null;
+        }
+        if (!/^\d{1,2}-\d{4}$/.test(obj.Month)) {
+          skippedRows.push(`Row ${index + 2}: Invalid Month format (must be MM-YYYY): ${obj.Month}`);
+          return null;
+        }
+        const usage = parseInt(obj.Usage);
+        obj.Usage = isNaN(usage) || usage < 0 ? null : usage; // Null for invalid or negative usage
+        return obj;
+      })
+      .filter(row => row !== null);
+    if (skippedRows.length > 0) {
+      console.warn('Skipped rows due to errors:', skippedRows);
+    }
+    console.log('Parsed CSV data:', validRows);
+    return validRows;
+  }
+
+  function monthToWord(monthStr) {
+    if (!monthStr) return "";
+    const parts = monthStr.split('-');
+    if (parts.length !== 2) return monthStr;
+    const monthNum = parseInt(parts[0], 10);
+    const year = parts[1];
+    if (monthNum < 1 || monthNum > 12) return monthStr;
+    return `${monthNames[monthNum]} ${year}`;
+  }
+
+  function parseMonthNum(monthStr) {
+    if (!monthStr) return 0;
+    const parts = monthStr.split('-');
+    if (parts.length !== 2) return 0;
+    const m = parseInt(parts[0], 10);
+    const y = parseInt(parts[1], 10);
+    if (isNaN(m) || isNaN(y) || m < 1 || m > 12) {
+      console.warn(`Invalid month format: ${monthStr}`);
+      return 0;
+    }
+    return y * 12 + m;
+  }
+
+  function formatNumber(num) {
+    // If num is null or 0, return "Meter not read yet"
+    if (num === null || num === 0) {
+      return "Meter not read yet";
+    }
+    // Otherwise, format the number with commas
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function renderTable(filteredDataForDisplay, selectedName, selectedMonthFilterValue) {
+    tableBody.innerHTML = '';
+    hideEmptyState();
+
+    let renderedRowCount = 0;
+
+    let namesToRender = [];
+    if (selectedName) {
+        namesToRender = [selectedName];
+    } else {
+        namesToRender = Array.from(uniqueNames).sort();
+    }
+
+    namesToRender.forEach(name => {
+        // Get all records for the current name from the *filteredDataForDisplay*, sorted by month
+        const recordsForName = filteredDataForDisplay
+            .filter(row => row.Name === name)
+            .sort((a, b) => parseMonthNum(a.Month) - parseMonthNum(b.Month));
+
+        if (recordsForName.length > 0) {
+            recordsForName.forEach(record => {
+                const usage = record.Usage;
+                let bill = "Meter not read yet";
+                if (usage != null && usage !== 0) { // Only calculate bill if usage is not null and not 0
+                    bill = (usage * 20).toFixed(2);
+                    bill = formatNumber(bill);
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "group hover:bg-blue-100 transition-colors duration-150 ease-in-out"; // Added group for more complex hover effects if needed later
+                tr.innerHTML = `
+                  <td class="px-6 py-3 whitespace-nowrap text-gray-800 font-medium">${record.Name}</td>
+                  <td class="px-6 py-3 whitespace-nowrap text-gray-600 text-sm">${monthToWord(record.Month)}</td>
+                  <td class="px-6 py-3 whitespace-nowrap text-blue-700 font-semibold">${formatNumber(usage)}</td>
+                  <td class="px-6 py-3 whitespace-nowrap text-green-700 font-semibold">${bill}</td>
+                `;
+                tableBody.appendChild(tr);
+                renderedRowCount++;
+            });
+        } else if (!selectedName || selectedMonthFilterValue !== "") {
+            // If "All Names" is selected, or a specific month is selected (even if no data for that month),
+            // show "Meter not read yet" for names with no data for the current filter set.
+            // This ensures all names are accounted for unless a specific name filter is active and yields no results.
+            const tr = document.createElement('tr');
+            tr.className = "group hover:bg-blue-100 transition-colors duration-150 ease-in-out";
+            const monthText = selectedMonthFilterValue ? monthToWord(selectedMonthFilterValue) : (selectedName ? 'N/A' : 'No Data'); // Improve month display for these cases
+
+            tr.innerHTML = `
+                <td class="px-6 py-3 whitespace-nowrap text-gray-800 font-medium">${name}</td>
+                <td class="px-6 py-3 whitespace-nowrap text-gray-600 text-sm">${monthText}</td>
+                <td class="px-6 py-3 whitespace-nowrap text-gray-500 italic">Meter not read yet</td>
+                <td class="px-6 py-3 whitespace-nowrap text-gray-500 italic">Meter not read yet</td>
+            `;
+            tableBody.appendChild(tr);
+            renderedRowCount++;
+        }
+    });
+
+    if (renderedRowCount === 0) {
+      showEmptyState("No water usage records found matching your search and filter criteria.");
+    }
+  }
+
+  function populateFilters(data) {
+    const monthSet = new Set();
+    const now = new Date(); // Using current date for months filter range
+    const currentMonth = now.getMonth() + 1; // 1-12
+    const currentYear = now.getFullYear();
+    const currentMonthNum = currentYear * 12 + currentMonth;
+
+    data.forEach(row => {
+      uniqueNames.add(row.Name);
+      const monthNum = parseMonthNum(row.Month);
+      if (monthNum <= currentMonthNum) {
+        monthSet.add(row.Month);
+      }
+    });
+
+    const nameFilter = document.getElementById('nameFilter');
+    const monthFilter = document.getElementById('monthFilter');
+    nameFilter.innerHTML = '<option value="">All Names</option>' + Array.from(uniqueNames).sort().map(n => `<option value="${n}">${n}</option>`).join('');
+    monthFilter.innerHTML = '<option value="">All Months</option>' +
+      Array.from(monthSet)
+        .sort((a, b) => parseMonthNum(a) - parseMonthNum(b))
+        .map(m => `<option value="${m}">${monthToWord(m)}</option>`).join('');
+
+    // Set initial month filter to current real month for better UX
+    const currentMonthStr = `${String(currentMonth).padStart(2, '0')}-${currentYear}`;
+    monthFilter.value = monthSet.has(currentMonthStr) ? currentMonthStr : "";
+  }
+
+  function applyFilters() {
+    const nameVal = document.getElementById('nameFilter').value;
+    const monthVal = document.getElementById('monthFilter').value;
+    const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+    let filteredData = allData.filter(row => {
+      const matchesName = !nameVal || row.Name === nameVal;
+      const matchesMonth = !monthVal || row.Month === monthVal;
+      const matchesSearch = !searchVal ||
+        row.Name.toLowerCase().includes(searchVal) ||
+        monthToWord(row.Month).toLowerCase().includes(searchVal) ||
+        // Allow searching for "meter not read yet" when usage is null or 0
+        ((row.Usage === null || row.Usage === 0) && "meter not read yet".includes(searchVal)) ||
+        (row.Usage != null && row.Usage !== 0 && row.Usage.toString().toLowerCase().includes(searchVal)) ||
+        // Also check if bill text contains search term (e.g., "12,000.00")
+        (row.Usage != null && row.Usage !== 0 && (row.Usage * 20).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",").toLowerCase().includes(searchVal));
+
+      return matchesName && matchesMonth && matchesSearch;
+    });
+
+    // If "All Months" is selected and a specific name is chosen, sort the data by month
+    if (nameVal && !monthVal) {
+        filteredData.sort((a, b) => parseMonthNum(a.Month) - parseMonthNum(b.Month));
+    }
+
+    renderTable(filteredData, nameVal, monthVal);
+  }
+
+  async function loadData() {
+    showLoading();
+    try {
+      const res = await fetch(csvUrl);
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}. Please check the CSV URL and its public access settings.`);
+      }
+      const text = await res.text();
+      allData = parseCSV(text);
+
+      if (allData.length === 0) {
+        console.warn('No valid data parsed from CSV. Showing empty state.');
+        hideLoading();
+        showEmptyState("No data available to display. Please ensure the CSV is correctly formatted and accessible.");
+        return; // Exit if no data
+      }
+
+      populateFilters(allData);
+
+      // Apply initial filter for current month
+      const now = new Date();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const currentYear = now.getFullYear();
+      const currentMonthStr = `${currentMonth}-${currentYear}`;
+      document.getElementById('monthFilter').value = currentMonthStr;
+      applyFilters();
+
+      // Attach event listeners after initial render
+      document.getElementById('nameFilter').addEventListener('change', applyFilters);
+      document.getElementById('monthFilter').addEventListener('change', applyFilters);
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+    } catch (error) {
+      console.error('Error loading CSV data:', error);
+      hideLoading();
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="4" class="px-6 py-6 text-center text-red-600 font-medium">
+            <span data-feather="alert-triangle" class="inline-block align-middle mr-2"></span>
+            Failed to load data: ${error.message}
+            <p class="text-sm text-gray-500 mt-2">Please ensure the Google Sheet is published to the web as CSV.</p>
+          </td>
+        </tr>
+      `;
+      feather.replace(); // Re-render feather icons for the error message
+    } finally {
+      hideLoading(); // Ensure spinner is hidden even on error
+    }
+  }
+
+  loadData();
+  </script>
+  <script>
+    feather.replace(); // Initialize Feather icons on load
   </script>
 </body>
 </html>
