@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Hydro Watch - Resource Management Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+      color: #1f2937;
+      min-height: 100vh;
+    }
+
+    /* Custom scrollbar */
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 8px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-track {
+      background: #e1e5e9;
+      border-radius: 4px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 4px;
+    }
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+    }
+
+    /* Enhanced card effects */
+    .card-hover {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+    }
+
+    /* Glassmorphism effects */
+    .glass {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Enhanced shadows */
+    .shadow-xl {
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .shadow-2xl {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Focus styles */
+    input:focus, select:focus {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+      transform: scale(1.02);
+    }
+
+    /* Table row hover */
+    .table-row-hover:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
+      transform: scale(1.01);
+      transition: all 0.3s ease;
+    }
+
+    /* Animated gradients */
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradient 3s ease infinite;
+    }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Pulse animation */
+    .pulse-slow {
+      animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Floating animation */
+    .float {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .mobile-card {
+        margin-bottom: 1rem;
+      }
+      
+      .mobile-text-lg {
+        font-size: 1.125rem;
+      }
+      
+      .mobile-text-xl {
+        font-size: 1.25rem;
+      }
+      
+      .mobile-text-2xl {
+        font-size: 1.5rem;
+      }
+      
+      .mobile-p-4 {
+        padding: 1rem;
+      }
+      
+      .mobile-p-6 {
+        padding: 1.5rem;
+      }
+      
+      .mobile-gap-4 {
+        gap: 1rem;
+      }
+      
+      .mobile-gap-6 {
+        gap: 1.5rem;
+      }
+    }
+  </style>
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="glass border-b border-white/20 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-20">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg flex items-center justify-center float">
+              <i class="fa-solid fa-water text-white text-lg sm:text-xl"></i>
+            </div>
+          </div>
+          <div class="ml-3 sm:ml-6">
+            <h1 class="text-lg sm:text-2xl font-bold text-white">Hydro Watch</h1>
+            <p class="text-xs sm:text-sm text-blue-100">Smart Resource Management</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3 sm:space-x-6">
+          <div class="hidden sm:flex items-center space-x-3 text-blue-100">
+            <div class="w-3 h-3 bg-green-400 rounded-full pulse-slow"></div>
+            <span class="text-sm font-medium">Live Data</span>
+          </div>
+          <button onclick="refreshData()" class="flex items-center space-x-2 sm:space-x-3 px-3 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 text-sm sm:text-base">
+            <i class="fa-solid fa-rotate text-sm sm:text-lg"></i>
+            <span class="font-semibold hidden sm:inline">Refresh</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    
+    <!-- Electricity Dashboard -->
+    <div class="mb-6 sm:mb-8">
+      <div class="flex items-center justify-between mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-white">Electricity Dashboard</h2>
+        <div class="flex items-center space-x-3 text-blue-100">
+          <div class="w-3 h-3 bg-green-400 rounded-full pulse-slow"></div>
+          <span class="text-xs sm:text-sm font-medium">Live</span>
+        </div>
+      </div>
+      
+      <!-- Main Dashboard Card -->
+      <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <!-- Card 1: Current Month -->
+          <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl text-white transform hover:scale-105 transition-all duration-300 mobile-card">
+            <div class="flex items-center justify-center mb-3 sm:mb-4">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center backdrop-blur-sm">
+                <i class="fa-solid fa-calendar text-lg sm:text-2xl"></i>
+              </div>
+            </div>
+            <div class="text-center">
+              <h3 class="text-xs sm:text-sm font-medium text-blue-100 mb-1 sm:mb-2">Current Month</h3>
+              <p id="dashboard-month" class="text-lg sm:text-2xl font-bold"></p>
+            </div>
+          </div>
+
+          <!-- Card 2: Power Consumption -->
+          <div class="bg-gradient-to-br from-green-500 to-green-600 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl text-white transform hover:scale-105 transition-all duration-300 mobile-card">
+            <div class="flex items-center justify-center mb-3 sm:mb-4">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center backdrop-blur-sm">
+                <i class="fa-solid fa-bolt text-lg sm:text-2xl"></i>
+              </div>
+            </div>
+            <div class="text-center">
+              <h3 class="text-xs sm:text-sm font-medium text-green-100 mb-1 sm:mb-2">Power Consumption</h3>
+              <p id="dashboard-power-consumption" class="text-lg sm:text-2xl font-bold"></p>
+            </div>
+          </div>
+
+          <!-- Card 3: Electricity Reading -->
+          <div class="bg-gradient-to-br from-orange-500 to-orange-600 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl text-white transform hover:scale-105 transition-all duration-300 mobile-card">
+            <div class="flex items-center justify-center mb-3 sm:mb-4">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center backdrop-blur-sm">
+                <i class="fa-solid fa-chart-column text-lg sm:text-2xl"></i>
+              </div>
+            </div>
+            <div class="text-center">
+              <h3 class="text-xs sm:text-sm font-medium text-orange-100 mb-1 sm:mb-2">Electricity Reading</h3>
+              <p id="dashboard-electricity-reading" class="text-lg sm:text-2xl font-bold"></p>
+            </div>
+          </div>
+
+          <!-- Card 4: Generation Cost -->
+          <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl text-white transform hover:scale-105 transition-all duration-300 mobile-card">
+            <div class="flex items-center justify-center mb-3 sm:mb-4">
+              <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center backdrop-blur-sm">
+                <i class="fa-solid fa-microchip text-lg sm:text-2xl"></i>
+              </div>
+            </div>
+            <div class="text-center">
+              <h3 class="text-xs sm:text-sm font-medium text-indigo-100 mb-1 sm:mb-2">Generation Cost</h3>
+              <p id="dashboard-power-generation-cost" class="text-lg sm:text-2xl font-bold"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cost Impact Section -->
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 sm:p-8 rounded-xl sm:rounded-2xl shadow-xl text-center text-white transform hover:scale-105 transition-all duration-300">
+          <div class="flex justify-center items-center mb-4 sm:mb-6">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-2xl sm:rounded-3xl shadow-lg flex items-center justify-center backdrop-blur-sm">
+              <i class="fa-solid fa-coins text-2xl sm:text-3xl"></i>
+            </div>
+          </div>
+          <div class="text-center">
+            <h3 class="text-lg sm:text-xl font-semibold text-purple-100 mb-2 sm:mb-3">Cost Impact</h3>
+            <p id="dashboard-cost-impact" class="text-2xl sm:text-3xl font-bold"></p>
+            <p class="text-xs sm:text-sm text-purple-200 mt-1 sm:mt-2">Total financial impact</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter Panel -->
+    <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-8 mb-6 sm:mb-8">
+      <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">Data Explorer</h2>
+          <p class="text-sm sm:text-base text-gray-600">Search and filter through your water usage records</p>
+        </div>
+        <div class="flex items-center space-x-3 text-sm text-gray-500">
+          <i class="fa-solid fa-chart-line text-blue-500"></i>
+          <span id="record-count" class="font-semibold text-gray-700">0 records</span>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Search Input -->
+        <div>
+          <label for="searchInput" class="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Search Records</label>
+          <div class="relative">
+            <i class="fa-solid fa-search absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input id="searchInput" type="text" placeholder="Search by name, month, usage..."
+              class="pl-10 sm:pl-12 pr-4 py-3 sm:py-4 w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 bg-white/80 backdrop-blur-sm text-sm sm:text-base" />
+          </div>
+        </div>
+        
+        <!-- Name Filter -->
+        <div>
+          <label for="nameFilter" class="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Filter by Name</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <select id="nameFilter"
+              class="pl-10 sm:pl-12 pr-8 py-3 sm:py-4 w-full border-2 border-gray-200 rounded-xl appearance-none bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-sm sm:text-base">
+              <option value="">All Names</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+          </div>
+        </div>
+        
+        <!-- Month Filter -->
+        <div>
+          <label for="monthFilter" class="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Filter by Month</label>
+          <div class="relative">
+            <i class="fa-solid fa-calendar absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <select id="monthFilter"
+              class="pl-10 sm:pl-12 pr-8 py-3 sm:py-4 w-full border-2 border-gray-200 rounded-xl appearance-none bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 text-sm sm:text-base">
+              <option value="">All Months</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="hidden">
+      <div class="flex flex-col items-center justify-center py-12 sm:py-16">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin shadow-2xl"></div>
+        <p class="mt-4 sm:mt-6 text-base sm:text-lg text-white font-semibold">Loading data...</p>
+      </div>
+    </div>
+
+    <!-- Water Usage Records -->
+    <div class="card-hover rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-200/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3 sm:space-x-4">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg flex items-center justify-center">
+              <i class="fa-solid fa-water text-white text-lg sm:text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-lg sm:text-2xl font-bold text-gray-800">Water Usage Records</h2>
+              <p class="text-sm sm:text-base text-gray-600">Detailed consumption and billing information</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gradient-to-r from-blue-50 to-blue-100">
+            <tr>
+              <th class="px-4 sm:px-8 py-3 sm:py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                  <i class="fa-solid fa-user text-blue-500"></i>
+                  <span>Name</span>
+                </div>
+              </th>
+              <th class="px-4 sm:px-8 py-3 sm:py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                  <i class="fa-solid fa-calendar text-blue-500"></i>
+                  <span>Month</span>
+                </div>
+              </th>
+              <th class="px-4 sm:px-8 py-3 sm:py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                  <i class="fa-solid fa-tint text-blue-500"></i>
+                  <span>Usage (m³)</span>
+                </div>
+              </th>
+              <th class="px-4 sm:px-8 py-3 sm:py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                  <i class="fa-solid fa-money-bill text-blue-500"></i>
+                  <span>Bill (₱)</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="bg-white/80 backdrop-blur-sm divide-y divide-gray-200/50">
+          </tbody>
+        </table>
+      </div>
+      
+      <div id="empty-state-message" class="hidden">
+        <div class="text-center py-12 sm:py-16 px-4 sm:px-8">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+            <i class="fa-solid fa-file-text text-gray-400 text-xl sm:text-2xl"></i>
+          </div>
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-2 sm:mb-3">No records found</h3>
+          <p class="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Try adjusting your search criteria or filters to find what you're looking for.</p>
+          <button onclick="clearFilters()" class="inline-flex items-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base">
+            <i class="fa-solid fa-rotate text-sm sm:text-lg"></i>
+            <span class="font-semibold">Clear Filters</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    if (window.feather) feather.replace();
+    
+    // Add clear filters function
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('nameFilter').value = '';
+      document.getElementById('monthFilter').value = '';
+      if (typeof applyFilters === 'function') {
+        applyFilters();
+      }
+    }
+  </script>
+
+  <script src="electricity.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
