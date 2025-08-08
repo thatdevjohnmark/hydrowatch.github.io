@@ -408,6 +408,7 @@ function renderCombinedData(filteredDataForDisplay, selectedName, selectedMonthF
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Month</th>
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Water Usage (m³)</th>
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Water Bill (PHP)</th>
+    <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Payment Status</th>
   `;
 
   let namesToRender = [];
@@ -433,11 +434,21 @@ function renderCombinedData(filteredDataForDisplay, selectedName, selectedMonthF
 
               const tr = document.createElement('tr');
               tr.className = "group hover:bg-blue-100 transition-colors duration-150 ease-in-out";
+              
+              // Determine payment status based on bill
+              let paymentStatus = "Pending";
+              let paymentStatusClass = "text-yellow-600";
+              if (usage != null && usage !== 0) {
+                paymentStatus = "Paid";
+                paymentStatusClass = "text-green-600";
+              }
+              
               tr.innerHTML = `
                 <td class="px-6 py-3 whitespace-nowrap text-gray-800 font-medium">${record.Name}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-gray-600 text-sm">${monthToWord(record.Month)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-blue-700 font-semibold">${formatNumber(usage)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-green-700 font-semibold">${waterBill}</td>
+                <td class="px-6 py-3 whitespace-nowrap ${paymentStatusClass} font-semibold">${paymentStatus}</td>
               `;
               tableBody.appendChild(tr);
           });
@@ -451,6 +462,7 @@ function renderCombinedData(filteredDataForDisplay, selectedName, selectedMonthF
               <td class="px-6 py-3 whitespace-nowrap text-gray-600 text-sm">${monthText}</td>
               <td class="px-6 py-3 whitespace-nowrap text-gray-500 italic">Meter not read yet</td>
               <td class="px-6 py-3 whitespace-nowrap text-gray-500 italic">Meter not read yet</td>
+              <td class="px-6 py-3 whitespace-nowrap text-gray-500 italic">Pending</td>
           `;
           tableBody.appendChild(tr);
       }
@@ -494,6 +506,7 @@ function renderWaterData(filteredDataForDisplay, selectedName, selectedMonthFilt
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Month</th>
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Usage (Cubic Meters)</th>
     <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Bill (PHP)</th>
+    <th class="px-6 py-4 text-left font-bold text-gray-700 uppercase tracking-wider text-sm">Payment Status</th>
   `;
 
   let namesToRender = [];
@@ -519,11 +532,21 @@ function renderWaterData(filteredDataForDisplay, selectedName, selectedMonthFilt
 
               const tr = document.createElement('tr');
               tr.className = "group hover:bg-blue-100 transition-colors duration-150 ease-in-out";
+              
+              // Determine payment status based on bill
+              let paymentStatus = "Pending";
+              let paymentStatusClass = "text-yellow-600";
+              if (usage != null && usage !== 0) {
+                paymentStatus = "Paid";
+                paymentStatusClass = "text-green-600";
+              }
+              
               tr.innerHTML = `
                 <td class="px-6 py-3 whitespace-nowrap text-gray-800 font-medium">${record.Name}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-gray-600 text-sm">${monthToWord(record.Month)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-blue-700 font-semibold">${formatNumber(usage)}</td>
                 <td class="px-6 py-3 whitespace-nowrap text-green-700 font-semibold">${bill}</td>
+                <td class="px-6 py-3 whitespace-nowrap ${paymentStatusClass} font-semibold">${paymentStatus}</td>
               `;
               tableBody.appendChild(tr);
           });
@@ -564,16 +587,42 @@ function populateFilters(data) {
 
   const nameFilter = document.getElementById('nameFilter');
   const monthFilter = document.getElementById('monthFilter');
+  const pieChartMonthFilter = document.getElementById('pieChartMonthFilter');
   
   if (!nameFilter || !monthFilter) {
     console.error('Filter elements not found');
     return;
   }
+  
   nameFilter.innerHTML = '<option value="">All Names</option>' + Array.from(uniqueNames).sort().map(n => `<option value="${n}">${n}</option>`).join('');
   monthFilter.innerHTML = '<option value="">All Months</option>' +
     Array.from(monthSet)
       .sort((a, b) => parseMonthNum(a) - parseMonthNum(b))
       .map(m => `<option value="${m}">${monthToWord(m)}</option>`).join('');
+
+  // Populate pie chart month filter
+  if (pieChartMonthFilter) {
+    const currentMonth = getCurrentMonth();
+    const sortedMonths = Array.from(monthSet)
+      .sort((a, b) => parseMonthNum(a) - parseMonthNum(b));
+    
+    // Check if current month exists in the data
+    const currentMonthExists = sortedMonths.includes(currentMonth);
+    
+    pieChartMonthFilter.innerHTML = '<option value="">All Months</option>' +
+      sortedMonths.map(m => `<option value="${m}">${monthToWord(m)}</option>`).join('');
+    
+    // Set current month as default if it exists in the data
+    if (currentMonthExists) {
+      pieChartMonthFilter.value = currentMonth;
+      // Trigger the pie chart update with the default selection
+      setTimeout(() => {
+        if (typeof updateWaterUsagePieChart === 'function') {
+          updateWaterUsagePieChart(allData);
+        }
+      }, 100);
+    }
+  }
 
   // Set initial month filter to the most recent month with data, not current month
   const availableMonths = Array.from(monthSet).sort((a, b) => parseMonthNum(a) - parseMonthNum(b));
@@ -687,6 +736,11 @@ function applyFilters() {
    
    // Update electricity cards when filters change
    updatePowerConsumptionCard(monthVal);
+   
+   // Update charts with filtered data
+   if (typeof updateAllCharts === 'function') {
+     updateAllCharts(allData);
+   }
 }
 
 // Data Loading Functions
@@ -757,6 +811,7 @@ async function loadData() {
 
     // Populate filters
     populateFilters(allData);
+    populateElectricityFilters(allData);
 
     // Apply initial filters
     applyFilters();
@@ -766,11 +821,159 @@ async function loadData() {
       updateElectricityDashboardCard();
     }
 
+    // Update charts with new data
+    if (typeof updateAllCharts === 'function') {
+      updateAllCharts(allData);
+    }
+
     hideLoading();
   } catch (error) {
     console.error('Error loading data:', error);
     hideLoading();
     showEmptyState('Failed to load data. Please check your internet connection and try again.');
+  }
+}
+
+// Electricity Dashboard Filter Functions
+function applyElectricityFilters() {
+  const electricityMonthFilter = document.getElementById('electricityMonthFilter');
+  const electricitySearchInput = document.getElementById('electricitySearchInput');
+  
+  if (!electricityMonthFilter || !electricitySearchInput) {
+    console.error('Electricity filter elements not found');
+    return;
+  }
+  
+  const selectedMonth = electricityMonthFilter.value;
+  const searchTerm = electricitySearchInput.value.toLowerCase();
+  
+  // Filter electricity data
+  const electricityData = allData.filter(row => row.dataType === 'electricity');
+  let filteredElectricityData = electricityData;
+  
+  // Apply month filter
+  if (selectedMonth) {
+    filteredElectricityData = filteredElectricityData.filter(row => row.Month === selectedMonth);
+  }
+  
+  // Apply search filter
+  if (searchTerm) {
+    filteredElectricityData = filteredElectricityData.filter(row => {
+      return (
+        (row.Month && row.Month.toLowerCase().includes(searchTerm)) ||
+        (row.PowerConsumption && row.PowerConsumption.toString().includes(searchTerm)) ||
+        (row.ElectricityReading && row.ElectricityReading.toString().includes(searchTerm)) ||
+        (row.CostImpact && row.CostImpact.toString().includes(searchTerm))
+      );
+    });
+  }
+  
+  // Update electricity dashboard cards
+  updateElectricityDashboardCards(filteredElectricityData);
+  
+  // Update electricity chart
+  if (typeof updateElectricityChart === 'function') {
+    updateElectricityChart(allData); // Keep using all data for chart consistency
+  }
+  
+  // Update record count
+  const recordCountElement = document.getElementById('electricity-record-count');
+  if (recordCountElement) {
+    recordCountElement.textContent = `${filteredElectricityData.length} records`;
+  }
+}
+
+function clearElectricityFilters() {
+  const electricityMonthFilter = document.getElementById('electricityMonthFilter');
+  const electricitySearchInput = document.getElementById('electricitySearchInput');
+  
+  if (electricityMonthFilter) {
+    electricityMonthFilter.value = '';
+  }
+  if (electricitySearchInput) {
+    electricitySearchInput.value = '';
+  }
+  
+  applyElectricityFilters();
+}
+
+function updateElectricityDashboardCards(filteredData) {
+  // Update dashboard cards with filtered data
+  if (filteredData.length > 0) {
+    const latestData = filteredData[filteredData.length - 1];
+    
+    // Update Current Month
+    const dashboardMonth = document.getElementById('dashboard-month');
+    if (dashboardMonth && latestData.Month) {
+      dashboardMonth.textContent = monthToWord(latestData.Month);
+    }
+    
+    // Update Power Consumption
+    const dashboardPowerConsumption = document.getElementById('dashboard-power-consumption');
+    if (dashboardPowerConsumption && latestData.PowerConsumption !== null) {
+      dashboardPowerConsumption.textContent = formatNumber(latestData.PowerConsumption) + ' kWh';
+    }
+    
+    // Update Electricity Reading
+    const dashboardElectricityReading = document.getElementById('dashboard-electricity-reading');
+    if (dashboardElectricityReading && latestData.ElectricityReading !== null) {
+      dashboardElectricityReading.textContent = formatNumber(latestData.ElectricityReading) + ' kWh';
+    }
+    
+    // Update Generation Cost
+    const dashboardPowerGenerationCost = document.getElementById('dashboard-power-generation-cost');
+    if (dashboardPowerGenerationCost && latestData.CostImpact !== null) {
+      dashboardPowerGenerationCost.textContent = '₱' + formatNumber(latestData.CostImpact);
+    }
+    
+    // Update Cost Impact (total of filtered data)
+    const dashboardCostImpact = document.getElementById('dashboard-cost-impact');
+    if (dashboardCostImpact) {
+      const totalCostImpact = filteredData.reduce((sum, row) => {
+        return sum + (row.CostImpact || 0);
+      }, 0);
+      dashboardCostImpact.textContent = '₱' + formatNumber(totalCostImpact);
+    }
+  }
+}
+
+function getCurrentMonth() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  return `${month}-${year}`;
+}
+
+function populateElectricityFilters(data) {
+  const electricityData = data.filter(row => row.dataType === 'electricity');
+  const monthSet = new Set();
+  
+  electricityData.forEach(row => {
+    if (row.Month) {
+      monthSet.add(row.Month);
+    }
+  });
+  
+  const electricityMonthFilter = document.getElementById('electricityMonthFilter');
+  if (electricityMonthFilter) {
+    const currentMonth = getCurrentMonth();
+    const sortedMonths = Array.from(monthSet)
+      .sort((a, b) => parseMonthNum(a) - parseMonthNum(b));
+    
+    // Check if current month exists in the data
+    const currentMonthExists = sortedMonths.includes(currentMonth);
+    
+    electricityMonthFilter.innerHTML = '<option value="">All Months</option>' +
+      sortedMonths.map(m => `<option value="${m}">${monthToWord(m)}</option>`).join('');
+    
+    // Set current month as default if it exists in the data
+    if (currentMonthExists) {
+      electricityMonthFilter.value = currentMonth;
+      // Trigger the filter to apply the default selection
+      setTimeout(() => {
+        applyElectricityFilters();
+      }, 100);
+    }
   }
 }
 
@@ -786,17 +989,41 @@ function init() {
     return;
   }
   
+  // Initialize charts
+  if (typeof initializeCharts === 'function') {
+    initializeCharts();
+  }
+  
   loadData();
   
   // Set up event listeners for filters
   const nameFilter = document.getElementById('nameFilter');
   const monthFilter = document.getElementById('monthFilter');
   const searchInput = document.getElementById('searchInput');
+  const pieChartMonthFilter = document.getElementById('pieChartMonthFilter');
   
   if (nameFilter && monthFilter && searchInput) {
     nameFilter.addEventListener('change', applyFilters);
     monthFilter.addEventListener('change', applyFilters);
     searchInput.addEventListener('input', applyFilters);
+  }
+  
+  // Set up event listener for pie chart month filter
+  if (pieChartMonthFilter) {
+    pieChartMonthFilter.addEventListener('change', () => {
+      if (typeof updateWaterUsagePieChart === 'function') {
+        updateWaterUsagePieChart(allData);
+      }
+    });
+  }
+  
+  // Set up event listeners for electricity dashboard filters
+  const electricityMonthFilter = document.getElementById('electricityMonthFilter');
+  const electricitySearchInput = document.getElementById('electricitySearchInput');
+  
+  if (electricityMonthFilter && electricitySearchInput) {
+    electricityMonthFilter.addEventListener('change', applyElectricityFilters);
+    electricitySearchInput.addEventListener('input', applyElectricityFilters);
   }
   
   // Initialize Feather icons after a short delay to ensure DOM is ready
@@ -809,6 +1036,179 @@ function init() {
 function refreshData() {
   console.log('Refreshing data...');
   loadData();
+  
+  // Refresh charts after a short delay to ensure data is loaded
+  setTimeout(() => {
+    if (typeof updateAllCharts === 'function') {
+      updateAllCharts(allData);
+    }
+  }, 2000);
+}
+
+// Print Water Usage Records Function
+async function printWaterUsageRecords() {
+  try {
+    // Show loading state
+    const printButton = document.querySelector('button[onclick="printWaterUsageRecords()"]');
+    const originalText = printButton.innerHTML;
+    printButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm sm:text-lg"></i><span class="font-semibold">Generating PDF...</span>';
+    printButton.disabled = true;
+
+    // Get the table element
+    const tableElement = document.querySelector('table');
+    if (!tableElement) {
+      throw new Error('Table not found');
+    }
+
+    // Create a temporary container for the PDF content
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '0';
+    tempContainer.style.width = '800px';
+    tempContainer.style.backgroundColor = 'white';
+    tempContainer.style.padding = '20px';
+    tempContainer.style.fontFamily = 'Arial, sans-serif';
+    tempContainer.style.fontSize = '12px';
+    tempContainer.style.lineHeight = '1.4';
+
+    // Create the PDF header
+    const header = document.createElement('div');
+    header.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px;">
+        <h1 style="color: #1f2937; margin: 0; font-size: 24px; font-weight: bold;">Hydro Watch - Water Usage Records</h1>
+        <p style="color: #6b7280; margin: 5px 0 0 0; font-size: 14px;">Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
+      </div>
+    `;
+    tempContainer.appendChild(header);
+
+    // Clone the table and style it for PDF
+    const tableClone = tableElement.cloneNode(true);
+    tableClone.style.width = '100%';
+    tableClone.style.borderCollapse = 'collapse';
+    tableClone.style.marginTop = '20px';
+
+    // Style the table headers
+    const headers = tableClone.querySelectorAll('th');
+    headers.forEach(header => {
+      header.style.backgroundColor = '#3b82f6';
+      header.style.color = 'white';
+      header.style.padding = '12px 8px';
+      header.style.textAlign = 'left';
+      header.style.fontWeight = 'bold';
+      header.style.fontSize = '12px';
+      header.style.border = '1px solid #1e40af';
+    });
+
+    // Style the table cells
+    const cells = tableClone.querySelectorAll('td');
+    cells.forEach(cell => {
+      cell.style.padding = '8px';
+      cell.style.border = '1px solid #d1d5db';
+      cell.style.fontSize = '11px';
+    });
+
+    // Style table rows
+    const rows = tableClone.querySelectorAll('tbody tr');
+    rows.forEach((row, index) => {
+      if (index % 2 === 0) {
+        row.style.backgroundColor = '#f9fafb';
+      }
+    });
+
+    tempContainer.appendChild(tableClone);
+
+    // Add summary information
+    const summary = document.createElement('div');
+    summary.style.marginTop = '20px';
+    summary.style.padding = '15px';
+    summary.style.backgroundColor = '#f3f4f6';
+    summary.style.borderRadius = '8px';
+    summary.style.fontSize = '12px';
+
+    const waterData = allData.filter(row => row.dataType === 'water');
+    const totalUsage = waterData.reduce((sum, row) => sum + (row.Usage || 0), 0);
+    const totalBill = waterData.reduce((sum, row) => sum + (row.Bill || 0), 0);
+    const uniqueUsers = new Set(waterData.map(row => row.Name)).size;
+    const uniqueMonths = new Set(waterData.map(row => row.Month)).size;
+    
+    // Calculate payment status statistics
+    const paidRecords = waterData.filter(row => row.Usage != null && row.Usage !== 0).length;
+    const pendingRecords = waterData.filter(row => row.Usage == null || row.Usage === 0).length;
+
+    summary.innerHTML = `
+      <h3 style="color: #1f2937; margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">Summary</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div><strong>Total Records:</strong> ${waterData.length}</div>
+        <div><strong>Unique Users:</strong> ${uniqueUsers}</div>
+        <div><strong>Total Usage:</strong> ${totalUsage.toFixed(2)} m³</div>
+        <div><strong>Total Bill:</strong> ₱${totalBill.toFixed(2)}</div>
+        <div><strong>Months Covered:</strong> ${uniqueMonths}</div>
+        <div><strong>Average Usage:</strong> ${(totalUsage / waterData.length).toFixed(2)} m³</div>
+        <div><strong>Paid Records:</strong> ${paidRecords}</div>
+        <div><strong>Pending Records:</strong> ${pendingRecords}</div>
+      </div>
+    `;
+    tempContainer.appendChild(summary);
+
+    // Add to document temporarily
+    document.body.appendChild(tempContainer);
+
+    // Generate PDF
+    const canvas = await html2canvas(tempContainer, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff'
+    });
+
+    // Remove temporary container
+    document.body.removeChild(tempContainer);
+
+    // Create PDF
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    const imgData = canvas.toDataURL('image/png');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth - 20; // 10mm margin on each side
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 10; // 10mm top margin
+
+    // Add first page
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= (pdfHeight - 20);
+
+    // Add additional pages if needed
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight + 10;
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 20);
+    }
+
+    // Save the PDF
+    const fileName = `water_usage_records_${new Date().toISOString().split('T')[0]}.pdf`;
+    pdf.save(fileName);
+
+    // Reset button
+    printButton.innerHTML = originalText;
+    printButton.disabled = false;
+
+    // Show success message
+    alert('PDF generated successfully! The file has been downloaded.');
+
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('Error generating PDF. Please try again.');
+    
+    // Reset button
+    const printButton = document.querySelector('button[onclick="printWaterUsageRecords()"]');
+    printButton.innerHTML = originalText;
+    printButton.disabled = false;
+  }
 }
 
 // Event Listeners

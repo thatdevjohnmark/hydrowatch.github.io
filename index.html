@@ -6,6 +6,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- PDF Generation Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
@@ -140,6 +143,7 @@
     }
   </style>
   <script src="https://unpkg.com/feather-icons"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="min-h-screen">
   <!-- Header -->
@@ -186,6 +190,52 @@
       
       <!-- Main Dashboard Card -->
       <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-8">
+        <!-- Electricity Dashboard Filter -->
+        <div class="mb-6 sm:mb-8">
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6">
+            <div>
+              <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-1 sm:mb-2">Electricity Data Filter</h3>
+              <p class="text-sm sm:text-base text-gray-600">Filter electricity consumption data by month</p>
+            </div>
+            <div class="flex items-center space-x-3 text-sm text-gray-500">
+              <i class="fa-solid fa-bolt text-green-500"></i>
+              <span id="electricity-record-count" class="font-semibold text-gray-700">0 records</span>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-4 sm:mt-6">
+            <!-- Month Filter for Electricity -->
+            <div>
+              <label for="electricityMonthFilter" class="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Filter by Month</label>
+              <div class="relative">
+                <i class="fa-solid fa-calendar absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <select id="electricityMonthFilter"
+                  class="pl-10 sm:pl-12 pr-8 py-3 sm:py-4 w-full border-2 border-gray-200 rounded-xl appearance-none bg-white/80 backdrop-blur-sm focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 text-sm sm:text-base">
+                  <option value="">All Months</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+              </div>
+            </div>
+            
+            <!-- Search Input for Electricity -->
+            <div>
+              <label for="electricitySearchInput" class="block text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Search Records</label>
+              <div class="relative">
+                <i class="fa-solid fa-search absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input id="electricitySearchInput" type="text" placeholder="Search by month, consumption..."
+                  class="pl-10 sm:pl-12 pr-4 py-3 sm:py-4 w-full border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all duration-300 bg-white/80 backdrop-blur-sm text-sm sm:text-base" />
+              </div>
+            </div>
+            
+            <!-- Clear Filters Button -->
+            <div class="flex items-end">
+              <button onclick="clearElectricityFilters()" class="w-full inline-flex items-center justify-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base">
+                <i class="fa-solid fa-rotate text-sm sm:text-lg"></i>
+                <span class="font-semibold">Clear Filters</span>
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <!-- Card 1: Current Month -->
           <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-xl text-white transform hover:scale-105 transition-all duration-300 mobile-card">
@@ -252,6 +302,85 @@
             <p id="dashboard-cost-impact" class="text-2xl sm:text-3xl font-bold"></p>
             <p class="text-xs sm:text-sm text-purple-200 mt-1 sm:mt-2">Total financial impact</p>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Visualization Charts -->
+    <div class="mb-6 sm:mb-8">
+      <div class="flex items-center justify-between mb-6 sm:mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-white">Data Visualization</h2>
+        <div class="flex items-center space-x-3 text-blue-100">
+          <div class="w-3 h-3 bg-green-400 rounded-full pulse-slow"></div>
+          <span class="text-xs sm:text-sm font-medium">Interactive Charts</span>
+        </div>
+      </div>
+      
+      <!-- Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+        <!-- Water Usage Chart -->
+        <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-6">
+          <div class="flex items-center justify-between mb-4 sm:mb-6">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg flex items-center justify-center">
+                <i class="fa-solid fa-water text-white text-lg sm:text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg sm:text-xl font-bold text-gray-800">Water Usage Trends</h3>
+                <p class="text-sm sm:text-base text-gray-600">Monthly consumption patterns</p>
+              </div>
+            </div>
+          </div>
+          <div class="relative h-64 sm:h-80">
+            <canvas id="waterUsageChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Electricity Chart -->
+        <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-6">
+          <div class="flex items-center justify-between mb-4 sm:mb-6">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg flex items-center justify-center">
+                <i class="fa-solid fa-bolt text-white text-lg sm:text-xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg sm:text-xl font-bold text-gray-800">Electricity Consumption</h3>
+                <p class="text-sm sm:text-base text-gray-600">Power usage and readings</p>
+              </div>
+            </div>
+          </div>
+          <div class="relative h-64 sm:h-80">
+            <canvas id="electricityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Water Usage Pie Chart -->
+      <div class="card-hover rounded-2xl shadow-2xl p-4 sm:p-6">
+        <div class="flex items-center justify-between mb-4 sm:mb-6">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl shadow-lg flex items-center justify-center">
+              <i class="fa-solid fa-chart-pie text-white text-lg sm:text-xl"></i>
+              </div>
+                             <div>
+                   <h3 class="text-lg sm:text-xl font-bold text-gray-800">Water Usage by User</h3>
+                   <p class="text-sm sm:text-base text-gray-600">Water consumption by user</p>
+                 </div>
+          </div>
+          <!-- Month Filter for Pie Chart -->
+          <div class="flex items-center space-x-3">
+            <label for="pieChartMonthFilter" class="text-sm font-semibold text-gray-700">Filter Month:</label>
+            <div class="relative">
+              <select id="pieChartMonthFilter"
+                class="pl-8 pr-8 py-2 border-2 border-gray-200 rounded-lg appearance-none bg-white/80 backdrop-blur-sm focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 text-sm">
+                <option value="">All Months</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+            </div>
+          </div>
+        </div>
+        <div class="relative h-64 sm:h-80">
+          <canvas id="waterUsagePieChart"></canvas>
         </div>
       </div>
     </div>
@@ -329,6 +458,10 @@
               <p class="text-sm sm:text-base text-gray-600">Detailed consumption and billing information</p>
             </div>
           </div>
+          <button onclick="printWaterUsageRecords()" class="inline-flex items-center space-x-2 sm:space-x-3 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base">
+            <i class="fa-solid fa-print text-sm sm:text-lg"></i>
+            <span class="font-semibold">Print Records</span>
+          </button>
         </div>
       </div>
       
@@ -398,6 +531,7 @@
   </script>
 
   <script src="electricity.js"></script>
+  <script src="graphs.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

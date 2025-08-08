@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chart Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .chart-container { width: 400px; height: 300px; margin: 20px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Chart Test</h1>
+  
+  <div class="chart-container">
+    <canvas id="testChart"></canvas>
+  </div>
+
+  <script>
+    // Test if Chart.js is working
+    if (typeof Chart !== 'undefined') {
+      console.log('Chart.js loaded successfully');
+      
+      const ctx = document.getElementById('testChart');
+      const testChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+          datasets: [{
+            label: 'Test Data',
+            data: [10, 20, 15, 25],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+      
+      console.log('Test chart created successfully');
+    } else {
+      console.error('Chart.js not loaded');
+    }
+  </script>
+</body>
+</html> 
